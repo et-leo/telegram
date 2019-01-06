@@ -4,33 +4,33 @@ import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
-import repo.UserRepository;
+import repo.PlayerRepository;
 
-public class UsersMongoDB {
+public class PlayersMongoDB {
 	MongoTemplate mongoTemplate;
-	UserRepository users;
+	PlayerRepository users;
 	AbstractApplicationContext ctx;
-	static UsersMongoDB usersMongoDB;
+	static PlayersMongoDB usersMongoDB;
 
-	private UsersMongoDB() {
-		ctx = new FileSystemXmlApplicationContext(UserRepository.BEANS_FILE_NAME);
-		mongoTemplate = (MongoTemplate) ctx.getBean(UserRepository.MONGO_TEMPLATE_ID);
-		users = ctx.getBean(UserRepository.class);
+	private PlayersMongoDB() {
+		ctx = new FileSystemXmlApplicationContext(PlayerRepository.BEANS_FILE_NAME);
+		mongoTemplate = (MongoTemplate) ctx.getBean(PlayerRepository.MONGO_TEMPLATE_ID);
+		users = ctx.getBean(PlayerRepository.class);
 	}
 
-	synchronized public static UsersMongoDB createUsersMongoDB() {
+	synchronized public static PlayersMongoDB createUsersMongoDB() {
 		if (usersMongoDB == null) {
-			usersMongoDB = new UsersMongoDB();
+			usersMongoDB = new PlayersMongoDB();
 		}
 		return usersMongoDB;
 
 	}
 
 	public void drop() {
-		mongoTemplate.dropCollection(UserRepository.COLLECTION_NAME);
+		mongoTemplate.dropCollection(PlayerRepository.COLLECTION_NAME);
 	}
 
-	public boolean addUser(User user) {
+	public boolean addUser(Player user) {
 		boolean res = false;
 		users.findOne(user.userId);
 		if (!users.exists(user.getUserId())) {
@@ -40,12 +40,17 @@ public class UsersMongoDB {
 		return res;
 	}
 
-	public Iterable<User> getUsers() {
+	public Iterable<Player> getUsers() {
 		return users.findAll();
 	}
 
-	public User getUser(String userId) {
+	public Player getUser(String userId) {
 		return users.findOne(userId);
+	}
+
+	public void incUserCounter(String userId) {
+		int count = users.findOne(userId).counter;
+		users.save(new Player(userId, ++count));
 	}
 
 	//

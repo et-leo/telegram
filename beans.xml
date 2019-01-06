@@ -13,7 +13,7 @@
 	<!-- Configure the Mongo Server -->
 	<bean id="uri" class="com.mongodb.MongoClientURI">
 		<constructor-arg name="uri"
-			value="mongodb://telegram:Telegram123_@ds149344.mlab.com:49344/telegram" />
+			value="mongodb://root:root123@ds149344.mlab.com:49344/telegram" />
 	</bean>
 
 	<bean id="mongo" class="com.mongodb.MongoClient">

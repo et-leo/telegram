@@ -1,19 +1,17 @@
 package model;
 
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.index.Indexed;
 import org.springframework.data.mongodb.core.mapping.Document;
 
-import repo.UserRepository;
+import repo.PlayerRepository;
 
-@Document(collection = UserRepository.COLLECTION_NAME)
-public class User {
+@Document(collection = PlayerRepository.COLLECTION_NAME)
+public class Player {
 	@Id
-	@Indexed(unique = true)
 	String userId;
 	int counter;
 
-	public User(String userId, int counter) {
+	public Player(String userId, int counter) {
 		this.userId = userId;
 		this.counter = counter;
 	}
@@ -36,7 +34,8 @@ public class User {
 
 	@Override
 	public String toString() {
-		return "User [userName=" + userId + ", counter=" + counter + "]";
+		return userId;
+
 	}
 
 }

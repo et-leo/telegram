@@ -2,9 +2,9 @@ package repo;
 
 import org.springframework.data.repository.CrudRepository;
 
-import model.User;
+import model.Player;
 
-public interface UserRepository extends CrudRepository<User, String> {
+public interface PlayerRepository extends CrudRepository<Player, String> {
 	String COLLECTION_NAME = "telegram";
 	String BEANS_FILE_NAME = "beans.xml";
 	String MONGO_TEMPLATE_ID = "mongoTemplate";

@@ -1,32 +1,32 @@
 package controller;
 
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.List;
 
-import model.User;
-import model.UsersMongoDB;
+import model.Player;
+import model.PlayersMongoDB;
 
 public class Test {
-	static Logger logger = Logger.getLogger("org.mongodb");
+	// static Logger logger = Logger.getLogger("org.mongodb");
 
 	public static void main(String[] args) {
 		// === Create === //
-		logger.setLevel(Level.ALL);
-		User user1 = new User("@user1", 0);
-		User user2 = new User("@user2", 0);
+		// logger.setLevel(Level.ALL);
+		Player user1 = new Player("@user1", 1);
+		Player user2 = new Player("@user2", 1);
 
-		UsersMongoDB usersMongoDB = UsersMongoDB.createUsersMongoDB();
+		PlayersMongoDB usersMongoDB = PlayersMongoDB.createUsersMongoDB();
 		// usersMongoDB.drop();
 		usersMongoDB.addUser(user1);
 		usersMongoDB.addUser(user2);
 
 		// === Read === //
 
-		logger.setLevel(Level.WARNING);
-		usersMongoDB.getUser(user1.getUserId());
-		for (User user : usersMongoDB.getUsers()) {
-			System.out.println(user.toString());
-		}
+		// logger.setLevel(Level.WARNING);
+		List<Player> players = (List<Player>) usersMongoDB.getUsers();
+		System.out.println(players.toString());
+//		for (User user : usersMongoDB.getUsers()) {
+//			System.out.println(user.toString());
+//		}
 
 	}
 

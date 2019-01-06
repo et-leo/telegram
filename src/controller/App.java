@@ -14,7 +14,11 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import model.Player;
+import model.PlayersMongoDB;
+
 public class App extends TelegramLongPollingBot {
+	static PlayersMongoDB usersMongoDB;
 
 	public static void main(String[] args) {
 		ApiContextInitializer.init();
@@ -24,6 +28,7 @@ public class App extends TelegramLongPollingBot {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
+		usersMongoDB = PlayersMongoDB.createUsersMongoDB();
 	}
 
 	public void onUpdateReceived(Update update) {
@@ -33,11 +38,9 @@ public class App extends TelegramLongPollingBot {
 			case "/help":
 				printHelpMessage(message);
 				break;
-
 			case "/play":
 				play(message);
 				break;
-
 			case "/stat":
 				showStat(message);
 				break;
@@ -45,20 +48,33 @@ public class App extends TelegramLongPollingBot {
 				addPlayer(message);
 				break;
 			default:
-				sendMsg(message, "default");
 				break;
 			}
 		}
 	}
 
 	private void showStat(Message message) {
-		// TODO Auto-generated method stub
-		sendMsg(message, "stat");
+		List<Player> players = (List<Player>) usersMongoDB.getUsers();
+		StringBuilder stat = new StringBuilder();
+		for (Player player : players) {
+			stat.append(player.getUserId() + ": " + player.getCounter() + "\n");
+		}
+		sendMsg(message, stat.toString());
 	}
 
 	private void play(Message message) {
-		// TODO Auto-generated method stub
-		sendMsg(message, "play");
+		List<Player> players = (List<Player>) usersMongoDB.getUsers();
+		sendMsg(message, "Searching...");
+		if (players.isEmpty()) {
+			sendMsg(message, "No players");
+		} else {
+			int nPlayers = players.size();
+			int randomPlayer = (int) (Math.random() * (nPlayers));
+			players.get(randomPlayer);
+			Player winner = players.get(randomPlayer);
+			sendMsg(message, "Winner: " + usersMongoDB.getUser(winner.getUserId()).toString());
+			usersMongoDB.incUserCounter(winner.getUserId());
+		}
 	}
 
 	private void printHelpMessage(Message message) {
@@ -67,8 +83,12 @@ public class App extends TelegramLongPollingBot {
 	}
 
 	private void addPlayer(Message message) {
-		// TODO Auto-generated method stub
-		sendMsg(message, "add player");
+		String userName = message.getFrom().getFirstName() + message.getFrom().getLastName();
+		if (usersMongoDB.addUser(new Player(userName, 0))) {
+			sendMsg(message, userName + " added");
+		} else {
+			sendMsg(message, userName + " already registred");
+		}
 
 	}
 
@@ -87,22 +107,22 @@ public class App extends TelegramLongPollingBot {
 
 	private void setButtons(SendMessage sendMessage) {
 		ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
-		sendMessage.setReplyMarkup(replyKeyboardMarkup);
+		//sendMessage.setReplyMarkup(replyKeyboardMarkup);
 		replyKeyboardMarkup.setSelective(true);
 		replyKeyboardMarkup.setResizeKeyboard(true);
 		replyKeyboardMarkup.setOneTimeKeyboard(false);
 
 		List<KeyboardRow> keyboardRows = new LinkedList<>();
 		KeyboardRow keyboardRow1 = new KeyboardRow();
-		KeyboardRow keyboardRow2 = new KeyboardRow();
+		// KeyboardRow keyboardRow2 = new KeyboardRow();
 
-		keyboardRow1.add(new KeyboardButton("/help"));
+		// keyboardRow1.add(new KeyboardButton("/help"));
 		keyboardRow1.add(new KeyboardButton("/register"));
-		keyboardRow2.add(new KeyboardButton("/play"));
-		keyboardRow2.add(new KeyboardButton("/stat"));
+		keyboardRow1.add(new KeyboardButton("/play"));
+		keyboardRow1.add(new KeyboardButton("/stat"));
 
 		keyboardRows.add(keyboardRow1);
-		keyboardRows.add(keyboardRow2);
+		// keyboardRows.add(keyboardRow2);
 
 		replyKeyboardMarkup.setKeyboard(keyboardRows);
 	}
@@ -113,7 +133,6 @@ public class App extends TelegramLongPollingBot {
 
 	@Override
 	public String getBotToken() {
-		return "662562683:AAGtst2EDKRIBps-QUAEDBwSX7lTuGgfEu0";
-		// return "756085460:AAG8Idohwk1Rp7WRt1_Z_zxEAzI7AMxdv48";
+		return "662562683:AAE_wnataOiCIH8wL5UqcpGx9TAdAbVRvdM";
 	}
 }
