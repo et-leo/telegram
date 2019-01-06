@@ -28,6 +28,10 @@ public class App extends TelegramLongPollingBot {
 				sendMsg(message, "help");
 				break;
 
+			case "/play":
+				sendMsg(message, "play");
+				break;
+
 			default:
 				sendMsg(message, "default");
 				break;
