@@ -1,11 +1,17 @@
 package telegram;
 
+import java.util.LinkedList;
+import java.util.List;
+
 import org.telegram.telegrambots.ApiContextInitializer;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.TelegramBotsApi;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 public class App extends TelegramLongPollingBot {
@@ -25,18 +31,45 @@ public class App extends TelegramLongPollingBot {
 		if (message != null && message.hasText()) {
 			switch (message.getText()) {
 			case "/help":
-				sendMsg(message, "help");
+				printHelpMessage(message);
 				break;
 
 			case "/play":
-				sendMsg(message, "play");
+				play(message);
 				break;
 
+			case "/stat":
+				showStat(message);
+				break;
+			case "/register":
+				addPlayer(message);
+				break;
 			default:
 				sendMsg(message, "default");
 				break;
 			}
 		}
+	}
+
+	private void showStat(Message message) {
+		// TODO Auto-generated method stub
+		sendMsg(message, "stat");
+	}
+
+	private void play(Message message) {
+		// TODO Auto-generated method stub
+		sendMsg(message, "play");
+	}
+
+	private void printHelpMessage(Message message) {
+		String help = "help";
+		sendMsg(message, help);
+	}
+
+	private void addPlayer(Message message) {
+		// TODO Auto-generated method stub
+		sendMsg(message, "add player");
+
 	}
 
 	private void sendMsg(Message message, String text) {
@@ -45,10 +78,33 @@ public class App extends TelegramLongPollingBot {
 		sendMessage.setChatId(message.getChatId());
 		sendMessage.setText(text);
 		try {
+			setButtons(sendMessage);
 			execute(sendMessage);
 		} catch (TelegramApiException e) {
 			e.printStackTrace();
 		}
+	}
+
+	private void setButtons(SendMessage sendMessage) {
+		ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
+		sendMessage.setReplyMarkup(replyKeyboardMarkup);
+		replyKeyboardMarkup.setSelective(true);
+		replyKeyboardMarkup.setResizeKeyboard(true);
+		replyKeyboardMarkup.setOneTimeKeyboard(false);
+
+		List<KeyboardRow> keyboardRows = new LinkedList<>();
+		KeyboardRow keyboardRow1 = new KeyboardRow();
+		KeyboardRow keyboardRow2 = new KeyboardRow();
+
+		keyboardRow1.add(new KeyboardButton("/help"));
+		keyboardRow1.add(new KeyboardButton("/register"));
+		keyboardRow2.add(new KeyboardButton("/play"));
+		keyboardRow2.add(new KeyboardButton("/stat"));
+
+		keyboardRows.add(keyboardRow1);
+		keyboardRows.add(keyboardRow2);
+
+		replyKeyboardMarkup.setKeyboard(keyboardRows);
 	}
 
 	public String getBotUsername() {
