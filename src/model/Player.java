@@ -3,11 +3,8 @@ package model;
 import java.util.Map;
 
 import org.springframework.data.annotation.Id;
-import org.springframework.data.mongodb.core.mapping.Document;
 
-import repo.PlayerRepository;
-
-@Document(collection = PlayerRepository.COLLECTION_NAME)
+// @Document(collection = PlayerRepository.COLLECTION_NAME)
 public class Player {
 	@Id
 	String userId;

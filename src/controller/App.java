@@ -3,9 +3,12 @@ package controller;
 import java.time.LocalDateTime;
 import java.time.Year;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Collectors;
 
 import org.telegram.telegrambots.ApiContextInitializer;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -18,11 +21,12 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
+import model.BotConfig;
 import model.Player;
 import model.PlayersMongoDB;
 
 public class App extends TelegramLongPollingBot {
-
+	String enter = System.getProperty("line.separator");
 	// static PlayersMongoDB usersMongoDB;
 	static Map<Long, PlayersMongoDB> usersMongoDB = new HashMap<>();
 	static Player winner;
@@ -44,23 +48,24 @@ public class App extends TelegramLongPollingBot {
 		Message message = update.getMessage();
 		chatId = message.getChatId();
 		createMongoTable(message);
-
 		if (message != null && message.hasText()) {
-			switch (message.getText()) {
-			case "/help":
+			String text = message.getText();
+			if (text.equals("/help")) {
 				printHelpMessage(message);
-				break;
-			case "/play":
-				play(message);
-				break;
-			case "/stat":
-				showStat(message);
-				break;
-			case "/register":
-				addPlayer(message);
-				break;
-			default:
-				break;
+			} else {
+				if (text.equals("/play")) {
+					play(message);
+				} else {
+					if (text.equals("/register")) {
+						addPlayer(message);
+					} else {
+						if (text.startsWith("/stat")) {
+							showStat(message, text);
+						} else {
+							// ignore -> nothing to do
+						}
+					}
+				}
 			}
 		}
 	}
@@ -71,19 +76,55 @@ public class App extends TelegramLongPollingBot {
 		}
 	}
 
-	private void showStat(Message message) {
+	private void showStat(Message message, String text) {
 		List<Player> players = (List<Player>) usersMongoDB.get(chatId).getPlayers();
-		StringBuilder stat = new StringBuilder();
-		for (Player player : players) {
-			stat.append(player.getUserId() + ": " + player.getCounter() + "\n");
+		String textToSend = "No players!";
+		if (!players.isEmpty()) {
+			if (text.equalsIgnoreCase("/statAll")) {
+				textToSend = getSortedPlayers(players, null);
+			} else {
+				try {
+					String yearStr = text.replace("/stat", "");
+					textToSend = getSortedPlayers(players, Integer.parseInt(yearStr));
+				} catch (Exception e) {
+					// no such year -> nothing to do
+				}
+			}
 		}
-		sendMsg(message, stat.toString());
+		sendMsg(message, textToSend);
+	}
+
+	private String getSortedPlayers(List<Player> players, Integer year) {
+		StringBuilder stat = new StringBuilder("Statistic for " + year == null ? "all time" : (year + " year"));
+		Map<String, Integer> statMap = new HashMap<>();
+		if (year == null) {
+			for (Player player : players) {
+				int counter = 0;
+				for (Integer value : player.getCounter().values()) {
+					counter += value;
+				}
+				statMap.put(player.getUserId(), counter);
+			}
+		} else {
+			for (Player player : players) {
+				Integer count = player.getCounter().get(year);
+				statMap.put(player.getUserId(), count == null ? 0 : count);
+			}
+		}
+
+		Map<String, Integer> sortedPlayers = statMap.entrySet().stream().sorted((Map.Entry.<String, Integer>comparingByValue().reversed()))
+				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
+
+		for (Entry<String, Integer> player : sortedPlayers.entrySet()) {
+			stat.append(player.getKey() + ": " + player.getValue() + enter);
+		}
+		return stat.toString();
 	}
 
 	private void play(Message message) {
 		if (currentWinner == null) {
 			List<Player> players = (List<Player>) usersMongoDB.get(chatId).getPlayers();
-			sendMsg(message, "Searching...");
+			sendSpam(message);
 			if (players.isEmpty()) {
 				sendMsg(message, "No players");
 			} else {
@@ -105,8 +146,15 @@ public class App extends TelegramLongPollingBot {
 		}
 	}
 
+	private void sendSpam(Message message) {
+		// TODO - generate random messages
+		sendMsg(message, "search... ");
+		sendMsg(message, "spam... ");
+		sendMsg(message, "joke... ");
+	}
+
 	private void printHelpMessage(Message message) {
-		String help = "help";
+		String help = "/help - to see this message" + enter + "/register - registration" + enter + "/play - play round" + enter + "/statAll - stats for all time" + "/stat2019 - stats for selected year";
 		sendMsg(message, help);
 	}
 
@@ -140,32 +188,34 @@ public class App extends TelegramLongPollingBot {
 
 	private void setButtons(SendMessage sendMessage) {
 		ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
-		// sendMessage.setReplyMarkup(replyKeyboardMarkup);
-		replyKeyboardMarkup.setSelective(true);
+
+		sendMessage.setReplyMarkup(replyKeyboardMarkup);
+		replyKeyboardMarkup.setSelective(false);
 		replyKeyboardMarkup.setResizeKeyboard(true);
-		replyKeyboardMarkup.setOneTimeKeyboard(false);
+		replyKeyboardMarkup.setOneTimeKeyboard(true);
 
 		List<KeyboardRow> keyboardRows = new LinkedList<>();
 		KeyboardRow keyboardRow1 = new KeyboardRow();
-		// KeyboardRow keyboardRow2 = new KeyboardRow();
+		KeyboardRow keyboardRow2 = new KeyboardRow();
 
-		// keyboardRow1.add(new KeyboardButton("/help"));
-		keyboardRow1.add(new KeyboardButton("/register"));
 		keyboardRow1.add(new KeyboardButton("/play"));
-		keyboardRow1.add(new KeyboardButton("/stat"));
+		keyboardRow1.add(new KeyboardButton("/register"));
+		keyboardRow1.add(new KeyboardButton("/help"));
+		keyboardRow2.add(new KeyboardButton("/statAll"));
+		keyboardRow2.add(new KeyboardButton("/stat" + Year.now().getValue()));
 
 		keyboardRows.add(keyboardRow1);
-		// keyboardRows.add(keyboardRow2);
+		keyboardRows.add(keyboardRow2);
 
 		replyKeyboardMarkup.setKeyboard(keyboardRows);
 	}
 
 	public String getBotUsername() {
-		return "pidor2";
+		return BotConfig.NAME;
 	}
 
 	@Override
 	public String getBotToken() {
-		return "662562683:AAE_wnataOiCIH8wL5UqcpGx9TAdAbVRvdM";
+		return BotConfig.TOKEN;
 	}
 }

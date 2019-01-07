@@ -69,6 +69,11 @@ public class PlayersMongoDB {
 		return playersRepo.findAll();
 	}
 
+	// public Iterable<Player> getPlayers(int year) {
+	// Sort sort = new Sort(Sort.Direction.DESC, "<>");
+	// return playersRepo.findAll();
+	// }
+
 	public Player getPlayer(String userId) {
 		return playersRepo.findOne(userId);
 	}

@@ -8,9 +8,11 @@ public interface PlayerRepository extends CrudRepository<Player, String> {
 	String COLLECTION_NAME = "telegram";
 	String BEANS_FILE_NAME = "beans.xml";
 	String MONGO_TEMPLATE_ID = "mongoTemplate";
+	
+	
+//	Iterable<Player> findPlayers(int year);
+//	Iterable<Player> findPlayers();
 
-	// Iterable<User> findByAuthorLike(String author);
-	//
 	// Iterable<User> findByCostBetween(float f, float g);
 	//
 	// Iterable<User> findByPublisherCountryLike(String country);
