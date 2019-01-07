@@ -8,7 +8,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
-import com.mongodb.Mongo;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientURI;
 
 import repo.PlayerRepository;
 
@@ -37,11 +38,12 @@ public class PlayersMongoDB {
 	// }
 
 	private PlayersMongoDB(String chatId) {
-		String uri = "mongodb://root:root123@ds149344.mlab.com:49344/telegram";
-		// Mongo mongo = new MongoClient(uri);
-		@SuppressWarnings("deprecation")
-		Mongo mongo = new Mongo(uri);
-		mongoTemplate = new MongoTemplate(mongo, "telegram" + chatId);
+		String databaseName = "telegram";
+		String collectionName = databaseName + "" + chatId;
+		MongoClientURI uri = new MongoClientURI("mongodb://root:root123@ds149344.mlab.com:49344/" + databaseName);
+		MongoClient mongo = new MongoClient(uri);
+		mongoTemplate = new MongoTemplate(mongo, databaseName);
+		mongoTemplate.createCollection(collectionName);
 	}
 
 	synchronized public static PlayersMongoDB createUsersMongoDB(String chatId) {

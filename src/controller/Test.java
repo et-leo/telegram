@@ -21,7 +21,8 @@ public class Test {
 		Player user2 = new Player("@user2", counter);
 
 		PlayersMongoDB usersMongoDB = PlayersMongoDB.createUsersMongoDB("_dev");
-		// usersMongoDB.drop();
+		//usersMongoDB.drop();
+		
 		usersMongoDB.addPlayer(user1);
 		usersMongoDB.addPlayer(user2);
 
