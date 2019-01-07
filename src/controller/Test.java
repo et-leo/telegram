@@ -22,13 +22,13 @@ public class Test {
 
 		PlayersMongoDB usersMongoDB = PlayersMongoDB.createUsersMongoDB("_dev");
 		// usersMongoDB.drop();
-		usersMongoDB.addUser(user1);
-		usersMongoDB.addUser(user2);
+		usersMongoDB.addPlayer(user1);
+		usersMongoDB.addPlayer(user2);
 
 		// === Read === //
 
 		// logger.setLevel(Level.WARNING);
-		List<Player> players = (List<Player>) usersMongoDB.getUsers();
+		List<Player> players = (List<Player>) usersMongoDB.getPlayers();
 		System.out.println(players.toString());
 		// for (User user : usersMongoDB.getUsers()) {
 		// System.out.println(user.toString());

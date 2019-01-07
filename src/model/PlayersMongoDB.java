@@ -4,20 +4,22 @@ import java.time.Year;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.context.support.AbstractApplicationContext;
-import org.springframework.context.support.FileSystemXmlApplicationContext;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
 import com.mongodb.Mongo;
-import com.mongodb.MongoClient;
 
 import repo.PlayerRepository;
 
+@EnableMongoRepositories(basePackages = "repo")
 public class PlayersMongoDB {
 	MongoTemplate mongoTemplate;
-	PlayerRepository users;
-	AbstractApplicationContext ctx;
 	static PlayersMongoDB usersMongoDB;
+	// AbstractApplicationContext ctx;
+
+	@Autowired
+	PlayerRepository playersRepo;
 
 	// ========= works with one DB ======= //
 
@@ -26,7 +28,7 @@ public class PlayersMongoDB {
 	// mongoTemplate = (MongoTemplate) ctx.getBean(PlayerRepository.MONGO_TEMPLATE_ID);
 	// users = ctx.getBean(PlayerRepository.class);
 	// }
-	//
+
 	// synchronized public static PlayersMongoDB createUsersMongoDB() {
 	// if (usersMongoDB == null) {
 	// usersMongoDB = new PlayersMongoDB();
@@ -35,11 +37,11 @@ public class PlayersMongoDB {
 	// }
 
 	private PlayersMongoDB(String chatId) {
-		ctx = new FileSystemXmlApplicationContext(PlayerRepository.BEANS_FILE_NAME);
 		String uri = "mongodb://root:root123@ds149344.mlab.com:49344/telegram";
-		Mongo mongo = new MongoClient(uri);
+		// Mongo mongo = new MongoClient(uri);
+		@SuppressWarnings("deprecation")
+		Mongo mongo = new Mongo(uri);
 		mongoTemplate = new MongoTemplate(mongo, "telegram" + chatId);
-		users = ctx.getBean(PlayerRepository.class);
 	}
 
 	synchronized public static PlayersMongoDB createUsersMongoDB(String chatId) {
@@ -51,35 +53,34 @@ public class PlayersMongoDB {
 		mongoTemplate.dropCollection(PlayerRepository.COLLECTION_NAME);
 	}
 
-	public boolean addUser(Player user) {
+	public boolean addPlayer(Player user) {
 		boolean res = false;
-		users.findOne(user.userId);
-		if (!users.exists(user.getUserId())) {
-			users.save(user);
+		playersRepo.findOne(user.userId);
+		if (!playersRepo.exists(user.getUserId())) {
+			playersRepo.save(user);
 			res = true;
 		}
 		return res;
 	}
 
-	public Iterable<Player> getUsers() {
-		return users.findAll();
+	public Iterable<Player> getPlayers() {
+		return playersRepo.findAll();
 	}
 
-	public Player getUser(String userId) {
-		return users.findOne(userId);
+	public Player getPlayer(String userId) {
+		return playersRepo.findOne(userId);
 	}
 
-	public void incUserCounter(String userId) {
-		Map<Integer, Integer> counter = users.findOne(userId).counter;
+	public void incPlayerCounter(String userId) {
+		Map<Integer, Integer> counter = playersRepo.findOne(userId).counter;
 		int year = Year.now().getValue();
 		Integer count = counter.get(year);
 		count = count == null ? 1 : count++;
 		Map<Integer, Integer> newCounter = new HashMap<Integer, Integer>();
 		newCounter.put(year, count);
-		users.save(new Player(userId, newCounter));
+		playersRepo.save(new Player(userId, newCounter));
 	}
 
-	//
 	// public Iterable<Book> getBooksAuthor(String author) {
 	// return books.findByAuthorLike(author);
 	// }

@@ -72,7 +72,7 @@ public class App extends TelegramLongPollingBot {
 	}
 
 	private void showStat(Message message) {
-		List<Player> players = (List<Player>) usersMongoDB.get(chatId).getUsers();
+		List<Player> players = (List<Player>) usersMongoDB.get(chatId).getPlayers();
 		StringBuilder stat = new StringBuilder();
 		for (Player player : players) {
 			stat.append(player.getUserId() + ": " + player.getCounter() + "\n");
@@ -82,7 +82,7 @@ public class App extends TelegramLongPollingBot {
 
 	private void play(Message message) {
 		if (currentWinner == null) {
-			List<Player> players = (List<Player>) usersMongoDB.get(chatId).getUsers();
+			List<Player> players = (List<Player>) usersMongoDB.get(chatId).getPlayers();
 			sendMsg(message, "Searching...");
 			if (players.isEmpty()) {
 				sendMsg(message, "No players");
@@ -91,8 +91,8 @@ public class App extends TelegramLongPollingBot {
 				int randomPlayer = (int) (Math.random() * (nPlayers));
 				players.get(randomPlayer);
 				winner = players.get(randomPlayer);
-				sendMsg(message, "Winner: " + usersMongoDB.get(chatId).getUser(winner.getUserId()).toString());
-				usersMongoDB.get(chatId).incUserCounter(winner.getUserId());
+				sendMsg(message, "Winner: " + usersMongoDB.get(chatId).getPlayer(winner.getUserId()).toString());
+				usersMongoDB.get(chatId).incPlayerCounter(winner.getUserId());
 				currentWinner.put(winner, LocalDateTime.now());
 			}
 		} else {
@@ -117,7 +117,7 @@ public class App extends TelegramLongPollingBot {
 		String userName = message.getFrom().getFirstName() + message.getFrom().getLastName();
 		userName.replaceAll("_", "");
 		userName.replaceAll("*", "");
-		if (usersMongoDB.get(chatId).addUser(new Player(userName, counter))) {
+		if (usersMongoDB.get(chatId).addPlayer(new Player(userName, counter))) {
 			sendMsg(message, userName + " added");
 		} else {
 			sendMsg(message, userName + " already registred");
