@@ -28,7 +28,7 @@ import model.PlayersMongoDB;
 public class App extends TelegramLongPollingBot {
 	String enter = System.getProperty("line.separator");
 	// static PlayersMongoDB usersMongoDB;
-	static Map<Long, PlayersMongoDB> usersMongoDB = new HashMap<>();
+	// static Map<Long, PlayersMongoDB> usersMongoDB = new HashMap<>();
 	static Player winner;
 	static Map<Player, LocalDateTime> currentWinner;
 	long chatId;
@@ -71,13 +71,14 @@ public class App extends TelegramLongPollingBot {
 	}
 
 	private void createMongoTable(Message message) {
-		if (!usersMongoDB.containsKey(chatId)) {
-			usersMongoDB.put(chatId, PlayersMongoDB.createUsersMongoDB(String.valueOf(chatId)));
-		}
+//		if (!usersMongoDB.containsKey(chatId)) {
+//			usersMongoDB.put(chatId, PlayersMongoDB.createUsersMongoDB(String.valueOf(chatId)));
+//		}
+		PlayersMongoDB.createUsersMongoDB(String.valueOf(chatId));
 	}
 
 	private void showStat(Message message, String text) {
-		List<Player> players = (List<Player>) usersMongoDB.get(chatId).getPlayers();
+		List<Player> players = (List<Player>) PlayersMongoDB.usersMongoDB.getPlayers();
 		String textToSend = "No players!";
 		if (!players.isEmpty()) {
 			if (text.equalsIgnoreCase("/statAll")) {
@@ -112,7 +113,8 @@ public class App extends TelegramLongPollingBot {
 			}
 		}
 
-		Map<String, Integer> sortedPlayers = statMap.entrySet().stream().sorted((Map.Entry.<String, Integer>comparingByValue().reversed()))
+		Map<String, Integer> sortedPlayers = statMap.entrySet().stream()
+				.sorted((Map.Entry.<String, Integer>comparingByValue().reversed()))
 				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
 
 		for (Entry<String, Integer> player : sortedPlayers.entrySet()) {
@@ -123,7 +125,7 @@ public class App extends TelegramLongPollingBot {
 
 	private void play(Message message) {
 		if (currentWinner == null) {
-			List<Player> players = (List<Player>) usersMongoDB.get(chatId).getPlayers();
+			List<Player> players = (List<Player>) PlayersMongoDB.usersMongoDB.getPlayers();
 			sendSpam(message);
 			if (players.isEmpty()) {
 				sendMsg(message, "No players");
@@ -132,8 +134,8 @@ public class App extends TelegramLongPollingBot {
 				int randomPlayer = (int) (Math.random() * (nPlayers));
 				players.get(randomPlayer);
 				winner = players.get(randomPlayer);
-				sendMsg(message, "Winner: " + usersMongoDB.get(chatId).getPlayer(winner.getUserId()).toString());
-				usersMongoDB.get(chatId).incPlayerCounter(winner.getUserId());
+				sendMsg(message, "Winner: " + PlayersMongoDB.usersMongoDB.getPlayer(winner.getUserId()).toString());
+				PlayersMongoDB.usersMongoDB.incPlayerCounter(winner.getUserId());
 				currentWinner.put(winner, LocalDateTime.now());
 			}
 		} else {
@@ -154,7 +156,8 @@ public class App extends TelegramLongPollingBot {
 	}
 
 	private void printHelpMessage(Message message) {
-		String help = "/help - to see this message" + enter + "/register - registration" + enter + "/play - play round" + enter + "/statAll - stats for all time" + "/stat2019 - stats for selected year";
+		String help = "/help - to see this message" + enter + "/register - registration" + enter + "/play - play round"
+				+ enter + "/statAll - stats for all time" + "/stat2019 - stats for selected year";
 		sendMsg(message, help);
 	}
 
@@ -164,8 +167,8 @@ public class App extends TelegramLongPollingBot {
 		counter.put(year, 0);
 		String userName = message.getFrom().getFirstName() + message.getFrom().getLastName();
 		userName.replaceAll("_", "");
-		userName.replaceAll("*", "");
-		if (usersMongoDB.get(chatId).addPlayer(new Player(userName, counter))) {
+		// userName.replaceAll("*", "");
+		if (PlayersMongoDB.usersMongoDB.addPlayer(new Player(userName, counter))) {
 			sendMsg(message, userName + " added");
 		} else {
 			sendMsg(message, userName + " already registred");

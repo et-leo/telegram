@@ -4,38 +4,34 @@ import java.time.Year;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.context.support.FileSystemXmlApplicationContext;
 import org.springframework.data.mongodb.core.MongoTemplate;
-import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
 
 import repo.PlayerRepository;
 
-@EnableMongoRepositories(basePackages = "repo")
 public class PlayersMongoDB {
 	MongoTemplate mongoTemplate;
-	static PlayersMongoDB usersMongoDB;
-	// AbstractApplicationContext ctx;
-
-	@Autowired
 	PlayerRepository playersRepo;
+	AbstractApplicationContext ctx;
+	public static PlayersMongoDB usersMongoDB;
 
-	// ========= works with one DB ======= //
+	private PlayersMongoDB() {
+		ctx = new FileSystemXmlApplicationContext(PlayerRepository.BEANS_FILE_NAME);
+		mongoTemplate = (MongoTemplate) ctx.getBean(PlayerRepository.MONGO_TEMPLATE_ID);
+		playersRepo = ctx.getBean(PlayerRepository.class);
+	}
 
-	// private PlayersMongoDB() {
-	// ctx = new FileSystemXmlApplicationContext(PlayerRepository.BEANS_FILE_NAME);
-	// mongoTemplate = (MongoTemplate) ctx.getBean(PlayerRepository.MONGO_TEMPLATE_ID);
-	// users = ctx.getBean(PlayerRepository.class);
-	// }
+	synchronized public static PlayersMongoDB createUsersMongoDB() {
+		if (usersMongoDB == null) {
+			usersMongoDB = new PlayersMongoDB();
+		}
+		return usersMongoDB;
 
-	// synchronized public static PlayersMongoDB createUsersMongoDB() {
-	// if (usersMongoDB == null) {
-	// usersMongoDB = new PlayersMongoDB();
-	// }
-	// return usersMongoDB;
-	// }
+	}
 
 	private PlayersMongoDB(String chatId) {
 		String databaseName = "telegram";
@@ -43,7 +39,11 @@ public class PlayersMongoDB {
 		MongoClientURI uri = new MongoClientURI("mongodb://root:root123@ds149344.mlab.com:49344/" + databaseName);
 		MongoClient mongo = new MongoClient(uri);
 		mongoTemplate = new MongoTemplate(mongo, databaseName);
-		mongoTemplate.createCollection(collectionName);
+		try {
+			mongoTemplate.createCollection(collectionName);
+		} catch (Exception e) {
+			System.out.println("exist");
+		}
 	}
 
 	synchronized public static PlayersMongoDB createUsersMongoDB(String chatId) {
