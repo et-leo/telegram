@@ -17,7 +17,7 @@ public class PlayersMongoDB {
 	MongoTemplate mongoTemplate;
 	PlayerRepository playersRepo;
 	AbstractApplicationContext ctx;
-	public static PlayersMongoDB usersMongoDB;
+	static PlayersMongoDB usersMongoDB;
 
 	private PlayersMongoDB() {
 		ctx = new FileSystemXmlApplicationContext(PlayerRepository.BEANS_FILE_NAME);

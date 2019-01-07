@@ -27,10 +27,9 @@ import model.PlayersMongoDB;
 
 public class App extends TelegramLongPollingBot {
 	String enter = System.getProperty("line.separator");
-	// static PlayersMongoDB usersMongoDB;
-	// static Map<Long, PlayersMongoDB> usersMongoDB = new HashMap<>();
+	static PlayersMongoDB usersMongoDB;
 	static Player winner;
-	static Map<Player, LocalDateTime> currentWinner;
+	static Map<Player, Integer> currentWinner = new HashMap<Player, Integer>();
 	long chatId;
 
 	public static void main(String[] args) {
@@ -41,7 +40,7 @@ public class App extends TelegramLongPollingBot {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		// usersMongoDB = PlayersMongoDB.createUsersMongoDB();
+		usersMongoDB = PlayersMongoDB.createUsersMongoDB();
 	}
 
 	public synchronized void onUpdateReceived(Update update) {
@@ -78,7 +77,7 @@ public class App extends TelegramLongPollingBot {
 	}
 
 	private void showStat(Message message, String text) {
-		List<Player> players = (List<Player>) PlayersMongoDB.usersMongoDB.getPlayers();
+		List<Player> players = (List<Player>) usersMongoDB.getPlayers();
 		String textToSend = "No players!";
 		if (!players.isEmpty()) {
 			if (text.equalsIgnoreCase("/statAll")) {
@@ -96,7 +95,8 @@ public class App extends TelegramLongPollingBot {
 	}
 
 	private String getSortedPlayers(List<Player> players, Integer year) {
-		StringBuilder stat = new StringBuilder("Statistic for " + year == null ? "all time" : (year + " year"));
+		StringBuilder stat = new StringBuilder(
+				"Statistic for " + (year == null ? "all time" : (year + " year")) + enter);
 		Map<String, Integer> statMap = new HashMap<>();
 		if (year == null) {
 			for (Player player : players) {
@@ -124,8 +124,8 @@ public class App extends TelegramLongPollingBot {
 	}
 
 	private void play(Message message) {
-		if (currentWinner == null) {
-			List<Player> players = (List<Player>) PlayersMongoDB.usersMongoDB.getPlayers();
+		if (currentWinner.isEmpty()) {
+			List<Player> players = (List<Player>) usersMongoDB.getPlayers();
 			sendSpam(message);
 			if (players.isEmpty()) {
 				sendMsg(message, "No players");
@@ -134,15 +134,15 @@ public class App extends TelegramLongPollingBot {
 				int randomPlayer = (int) (Math.random() * (nPlayers));
 				players.get(randomPlayer);
 				winner = players.get(randomPlayer);
-				sendMsg(message, "Winner: " + PlayersMongoDB.usersMongoDB.getPlayer(winner.getUserId()).toString());
-				PlayersMongoDB.usersMongoDB.incPlayerCounter(winner.getUserId());
-				currentWinner.put(winner, LocalDateTime.now());
+				sendMsg(message, "Winner: " + usersMongoDB.getPlayer(winner.getUserId()).toString());
+				usersMongoDB.incPlayerCounter(winner.getUserId());
+				currentWinner.put(winner, LocalDateTime.now().getDayOfYear());
 			}
 		} else {
-			if (currentWinner.get(winner) == LocalDateTime.now()) {
+			if (currentWinner.get(winner) == LocalDateTime.now().getDayOfYear()) {
 				sendMsg(message, "Current winner: " + winner.toString());
 			} else {
-				currentWinner = null;
+				currentWinner.clear();
 				play(message);
 			}
 		}
@@ -168,7 +168,7 @@ public class App extends TelegramLongPollingBot {
 		String userName = message.getFrom().getFirstName() + message.getFrom().getLastName();
 		userName.replaceAll("_", "");
 		// userName.replaceAll("*", "");
-		if (PlayersMongoDB.usersMongoDB.addPlayer(new Player(userName, counter))) {
+		if (usersMongoDB.addPlayer(new Player(userName, counter))) {
 			sendMsg(message, userName + " added");
 		} else {
 			sendMsg(message, userName + " already registred");
