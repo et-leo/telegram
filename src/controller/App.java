@@ -1,7 +1,11 @@
 package controller;
 
+import java.time.LocalDateTime;
+import java.time.Year;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import org.telegram.telegrambots.ApiContextInitializer;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -18,7 +22,10 @@ import model.Player;
 import model.PlayersMongoDB;
 
 public class App extends TelegramLongPollingBot {
+
 	static PlayersMongoDB usersMongoDB;
+	static Player winner;
+	static Map<Player, LocalDateTime> currentWinner;
 
 	public static void main(String[] args) {
 		ApiContextInitializer.init();
@@ -63,17 +70,27 @@ public class App extends TelegramLongPollingBot {
 	}
 
 	private void play(Message message) {
-		List<Player> players = (List<Player>) usersMongoDB.getUsers();
-		sendMsg(message, "Searching...");
-		if (players.isEmpty()) {
-			sendMsg(message, "No players");
+		if (currentWinner == null) {
+			List<Player> players = (List<Player>) usersMongoDB.getUsers();
+			sendMsg(message, "Searching...");
+			if (players.isEmpty()) {
+				sendMsg(message, "No players");
+			} else {
+				int nPlayers = players.size();
+				int randomPlayer = (int) (Math.random() * (nPlayers));
+				players.get(randomPlayer);
+				winner = players.get(randomPlayer);
+				sendMsg(message, "Winner: " + usersMongoDB.getUser(winner.getUserId()).toString());
+				usersMongoDB.incUserCounter(winner.getUserId());
+				currentWinner.put(winner, LocalDateTime.now());
+			}
 		} else {
-			int nPlayers = players.size();
-			int randomPlayer = (int) (Math.random() * (nPlayers));
-			players.get(randomPlayer);
-			Player winner = players.get(randomPlayer);
-			sendMsg(message, "Winner: " + usersMongoDB.getUser(winner.getUserId()).toString());
-			usersMongoDB.incUserCounter(winner.getUserId());
+			if (currentWinner.get(winner) == LocalDateTime.now()) {
+				sendMsg(message, "Current winner: " + winner.toString());
+			} else {
+				currentWinner = null;
+				play(message);
+			}
 		}
 	}
 
@@ -83,8 +100,13 @@ public class App extends TelegramLongPollingBot {
 	}
 
 	private void addPlayer(Message message) {
+		int year = Year.now().getValue();
+		Map<Integer, Integer> counter = new HashMap<Integer, Integer>();
+		counter.put(year, 0);
 		String userName = message.getFrom().getFirstName() + message.getFrom().getLastName();
-		if (usersMongoDB.addUser(new Player(userName, 0))) {
+		userName.replaceAll("_", "");
+		userName.replaceAll("*", "");
+		if (usersMongoDB.addUser(new Player(userName, counter))) {
 			sendMsg(message, userName + " added");
 		} else {
 			sendMsg(message, userName + " already registred");
@@ -107,7 +129,7 @@ public class App extends TelegramLongPollingBot {
 
 	private void setButtons(SendMessage sendMessage) {
 		ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
-		//sendMessage.setReplyMarkup(replyKeyboardMarkup);
+		// sendMessage.setReplyMarkup(replyKeyboardMarkup);
 		replyKeyboardMarkup.setSelective(true);
 		replyKeyboardMarkup.setResizeKeyboard(true);
 		replyKeyboardMarkup.setOneTimeKeyboard(false);

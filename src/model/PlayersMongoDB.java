@@ -1,5 +1,9 @@
 package model;
 
+import java.time.Year;
+import java.util.HashMap;
+import java.util.Map;
+
 import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -49,8 +53,13 @@ public class PlayersMongoDB {
 	}
 
 	public void incUserCounter(String userId) {
-		int count = users.findOne(userId).counter;
-		users.save(new Player(userId, ++count));
+		Map<Integer, Integer> counter = users.findOne(userId).counter;
+		int year = Year.now().getValue();
+		Integer count = counter.get(year);
+		count = count == null ? 1 : count++;
+		Map<Integer, Integer> newCounter = new HashMap<Integer, Integer>();
+		newCounter.put(year, count);
+		users.save(new Player(userId, newCounter));
 	}
 
 	//

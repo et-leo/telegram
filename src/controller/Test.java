@@ -1,6 +1,9 @@
 package controller;
 
+import java.time.Year;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import model.Player;
 import model.PlayersMongoDB;
@@ -11,8 +14,11 @@ public class Test {
 	public static void main(String[] args) {
 		// === Create === //
 		// logger.setLevel(Level.ALL);
-		Player user1 = new Player("@user1", 1);
-		Player user2 = new Player("@user2", 1);
+		int year = Year.now().getValue();
+		Map<Integer, Integer> counter = new HashMap<Integer, Integer>();
+		counter.put(year, 0);
+		Player user1 = new Player("@user1", counter);
+		Player user2 = new Player("@user2", counter);
 
 		PlayersMongoDB usersMongoDB = PlayersMongoDB.createUsersMongoDB();
 		// usersMongoDB.drop();
@@ -24,9 +30,9 @@ public class Test {
 		// logger.setLevel(Level.WARNING);
 		List<Player> players = (List<Player>) usersMongoDB.getUsers();
 		System.out.println(players.toString());
-//		for (User user : usersMongoDB.getUsers()) {
-//			System.out.println(user.toString());
-//		}
+		// for (User user : usersMongoDB.getUsers()) {
+		// System.out.println(user.toString());
+		// }
 
 	}
 

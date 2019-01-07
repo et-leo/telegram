@@ -1,5 +1,7 @@
 package model;
 
+import java.util.Map;
+
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 
@@ -9,9 +11,9 @@ import repo.PlayerRepository;
 public class Player {
 	@Id
 	String userId;
-	int counter;
+	Map<Integer, Integer> counter; // key - year; value - counter;
 
-	public Player(String userId, int counter) {
+	public Player(String userId, Map<Integer, Integer> counter) {
 		this.userId = userId;
 		this.counter = counter;
 	}
@@ -24,11 +26,11 @@ public class Player {
 		this.userId = userId;
 	}
 
-	public int getCounter() {
+	public Map<Integer, Integer> getCounter() {
 		return counter;
 	}
 
-	public void setCounter(int counter) {
+	public void setCounter(Map<Integer, Integer> counter) {
 		this.counter = counter;
 	}
 
