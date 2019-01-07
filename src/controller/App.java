@@ -23,9 +23,11 @@ import model.PlayersMongoDB;
 
 public class App extends TelegramLongPollingBot {
 
-	static PlayersMongoDB usersMongoDB;
+	// static PlayersMongoDB usersMongoDB;
+	static Map<Long, PlayersMongoDB> usersMongoDB = new HashMap<>();
 	static Player winner;
 	static Map<Player, LocalDateTime> currentWinner;
+	long chatId;
 
 	public static void main(String[] args) {
 		ApiContextInitializer.init();
@@ -35,11 +37,14 @@ public class App extends TelegramLongPollingBot {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		usersMongoDB = PlayersMongoDB.createUsersMongoDB();
+		// usersMongoDB = PlayersMongoDB.createUsersMongoDB();
 	}
 
-	public void onUpdateReceived(Update update) {
+	public synchronized void onUpdateReceived(Update update) {
 		Message message = update.getMessage();
+		chatId = message.getChatId();
+		createMongoTable(message);
+
 		if (message != null && message.hasText()) {
 			switch (message.getText()) {
 			case "/help":
@@ -60,8 +65,14 @@ public class App extends TelegramLongPollingBot {
 		}
 	}
 
+	private void createMongoTable(Message message) {
+		if (!usersMongoDB.containsKey(chatId)) {
+			usersMongoDB.put(chatId, PlayersMongoDB.createUsersMongoDB(String.valueOf(chatId)));
+		}
+	}
+
 	private void showStat(Message message) {
-		List<Player> players = (List<Player>) usersMongoDB.getUsers();
+		List<Player> players = (List<Player>) usersMongoDB.get(chatId).getUsers();
 		StringBuilder stat = new StringBuilder();
 		for (Player player : players) {
 			stat.append(player.getUserId() + ": " + player.getCounter() + "\n");
@@ -71,7 +82,7 @@ public class App extends TelegramLongPollingBot {
 
 	private void play(Message message) {
 		if (currentWinner == null) {
-			List<Player> players = (List<Player>) usersMongoDB.getUsers();
+			List<Player> players = (List<Player>) usersMongoDB.get(chatId).getUsers();
 			sendMsg(message, "Searching...");
 			if (players.isEmpty()) {
 				sendMsg(message, "No players");
@@ -80,8 +91,8 @@ public class App extends TelegramLongPollingBot {
 				int randomPlayer = (int) (Math.random() * (nPlayers));
 				players.get(randomPlayer);
 				winner = players.get(randomPlayer);
-				sendMsg(message, "Winner: " + usersMongoDB.getUser(winner.getUserId()).toString());
-				usersMongoDB.incUserCounter(winner.getUserId());
+				sendMsg(message, "Winner: " + usersMongoDB.get(chatId).getUser(winner.getUserId()).toString());
+				usersMongoDB.get(chatId).incUserCounter(winner.getUserId());
 				currentWinner.put(winner, LocalDateTime.now());
 			}
 		} else {
@@ -106,7 +117,7 @@ public class App extends TelegramLongPollingBot {
 		String userName = message.getFrom().getFirstName() + message.getFrom().getLastName();
 		userName.replaceAll("_", "");
 		userName.replaceAll("*", "");
-		if (usersMongoDB.addUser(new Player(userName, counter))) {
+		if (usersMongoDB.get(chatId).addUser(new Player(userName, counter))) {
 			sendMsg(message, userName + " added");
 		} else {
 			sendMsg(message, userName + " already registred");

@@ -8,6 +8,9 @@ import org.springframework.context.support.AbstractApplicationContext;
 import org.springframework.context.support.FileSystemXmlApplicationContext;
 import org.springframework.data.mongodb.core.MongoTemplate;
 
+import com.mongodb.Mongo;
+import com.mongodb.MongoClient;
+
 import repo.PlayerRepository;
 
 public class PlayersMongoDB {
@@ -16,18 +19,32 @@ public class PlayersMongoDB {
 	AbstractApplicationContext ctx;
 	static PlayersMongoDB usersMongoDB;
 
-	private PlayersMongoDB() {
+	// ========= works with one DB ======= //
+
+	// private PlayersMongoDB() {
+	// ctx = new FileSystemXmlApplicationContext(PlayerRepository.BEANS_FILE_NAME);
+	// mongoTemplate = (MongoTemplate) ctx.getBean(PlayerRepository.MONGO_TEMPLATE_ID);
+	// users = ctx.getBean(PlayerRepository.class);
+	// }
+	//
+	// synchronized public static PlayersMongoDB createUsersMongoDB() {
+	// if (usersMongoDB == null) {
+	// usersMongoDB = new PlayersMongoDB();
+	// }
+	// return usersMongoDB;
+	// }
+
+	private PlayersMongoDB(String chatId) {
 		ctx = new FileSystemXmlApplicationContext(PlayerRepository.BEANS_FILE_NAME);
-		mongoTemplate = (MongoTemplate) ctx.getBean(PlayerRepository.MONGO_TEMPLATE_ID);
+		String uri = "mongodb://root:root123@ds149344.mlab.com:49344/telegram";
+		Mongo mongo = new MongoClient(uri);
+		mongoTemplate = new MongoTemplate(mongo, "telegram" + chatId);
 		users = ctx.getBean(PlayerRepository.class);
 	}
 
-	synchronized public static PlayersMongoDB createUsersMongoDB() {
-		if (usersMongoDB == null) {
-			usersMongoDB = new PlayersMongoDB();
-		}
+	synchronized public static PlayersMongoDB createUsersMongoDB(String chatId) {
+		usersMongoDB = new PlayersMongoDB(chatId);
 		return usersMongoDB;
-
 	}
 
 	public void drop() {
