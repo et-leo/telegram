@@ -1,7 +1,5 @@
 package controller;
 
-import java.time.LocalDateTime;
-import java.time.Year;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -21,17 +19,14 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import model.BotConfig;
+import model.BotConfig; 
 import model.Player;
-import model.PlayersMongoDB;
+import model.PlayersDB;
 
 public class App extends TelegramLongPollingBot {
-	String enter = System.getProperty("line.separator");
-	// static PlayersMongoDB usersMongoDB;
-	static Map<Long, PlayersMongoDB> usersMongoDB = new HashMap<>();
-	static Player winner;
-	static Map<Player, LocalDateTime> currentWinner;
-	long chatId;
+	private String enter = System.getProperty("line.separator");
+	private static PlayersDB playersDB;
+	private long chatId;
 
 	public static void main(String[] args) {
 		ApiContextInitializer.init();
@@ -41,13 +36,12 @@ public class App extends TelegramLongPollingBot {
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		// usersMongoDB = PlayersMongoDB.createUsersMongoDB();
+		playersDB = PlayersDB.createPlayersDb();
 	}
 
 	public synchronized void onUpdateReceived(Update update) {
 		Message message = update.getMessage();
 		chatId = message.getChatId();
-		createMongoTable(message);
 		if (message != null && message.hasText()) {
 			String text = message.getText();
 			if (text.equals("/help")) {
@@ -70,14 +64,8 @@ public class App extends TelegramLongPollingBot {
 		}
 	}
 
-	private void createMongoTable(Message message) {
-		if (!usersMongoDB.containsKey(chatId)) {
-			usersMongoDB.put(chatId, PlayersMongoDB.createUsersMongoDB(String.valueOf(chatId)));
-		}
-	}
-
 	private void showStat(Message message, String text) {
-		List<Player> players = (List<Player>) usersMongoDB.get(chatId).getPlayers();
+		List<Player> players = (List<Player>) playersDB.getPlayersByChatId(chatId);
 		String textToSend = "No players!";
 		if (!players.isEmpty()) {
 			if (text.equalsIgnoreCase("/statAll")) {
@@ -95,7 +83,7 @@ public class App extends TelegramLongPollingBot {
 	}
 
 	private String getSortedPlayers(List<Player> players, Integer year) {
-		StringBuilder stat = new StringBuilder("Statistic for " + year == null ? "all time" : (year + " year"));
+		StringBuilder stat = new StringBuilder("Statistic for " + (year == null ? "all time" : (year + " year")) + enter);
 		Map<String, Integer> statMap = new HashMap<>();
 		if (year == null) {
 			for (Player player : players) {
@@ -103,12 +91,12 @@ public class App extends TelegramLongPollingBot {
 				for (Integer value : player.getCounter().values()) {
 					counter += value;
 				}
-				statMap.put(player.getUserId(), counter);
+				statMap.put(player.getName(), counter);
 			}
 		} else {
 			for (Player player : players) {
 				Integer count = player.getCounter().get(year);
-				statMap.put(player.getUserId(), count == null ? 0 : count);
+				statMap.put(player.getName(), count == null ? 0 : count);
 			}
 		}
 
@@ -122,25 +110,23 @@ public class App extends TelegramLongPollingBot {
 	}
 
 	private void play(Message message) {
+		Player currentWinner = playersDB.getWinnerByChatId(chatId);
+		Player newWinner;
 		if (currentWinner == null) {
-			List<Player> players = (List<Player>) usersMongoDB.get(chatId).getPlayers();
-			sendSpam(message);
+			List<Player> players = (List<Player>) playersDB.getPlayersByChatId(chatId);
 			if (players.isEmpty()) {
 				sendMsg(message, "No players");
 			} else {
-				int nPlayers = players.size();
-				int randomPlayer = (int) (Math.random() * (nPlayers));
-				players.get(randomPlayer);
-				winner = players.get(randomPlayer);
-				sendMsg(message, "Winner: " + usersMongoDB.get(chatId).getPlayer(winner.getUserId()).toString());
-				usersMongoDB.get(chatId).incPlayerCounter(winner.getUserId());
-				currentWinner.put(winner, LocalDateTime.now());
+				sendSpam(message);
+				newWinner = players.get((int) (Math.random() * (players.size())));
+				sendMsg(message, "Winner: " + newWinner.getName());
+				playersDB.updateWinner(newWinner, true);
 			}
 		} else {
-			if (currentWinner.get(winner) == LocalDateTime.now()) {
-				sendMsg(message, "Current winner: " + winner.toString());
+			if (currentWinner.getDateOfWin() == playersDB.getDate()) {
+				sendMsg(message, "Current winner: " + currentWinner.getName());
 			} else {
-				currentWinner = null;
+				playersDB.updateWinner(currentWinner, false);
 				play(message);
 			}
 		}
@@ -159,18 +145,14 @@ public class App extends TelegramLongPollingBot {
 	}
 
 	private void addPlayer(Message message) {
-		int year = Year.now().getValue();
+		String name = (message.getFrom().getFirstName() + message.getFrom().getLastName()).replace("_", "");
 		Map<Integer, Integer> counter = new HashMap<Integer, Integer>();
-		counter.put(year, 0);
-		String userName = message.getFrom().getFirstName() + message.getFrom().getLastName();
-		userName.replaceAll("_", "");
-		userName.replaceAll("*", "");
-		if (usersMongoDB.get(chatId).addPlayer(new Player(userName, counter))) {
-			sendMsg(message, userName + " added");
+		counter.put(playersDB.getYear(), 0);
+		if (playersDB.addPlayer(new Player(chatId, name, counter, false, ""))) {
+			sendMsg(message, name + " added");
 		} else {
-			sendMsg(message, userName + " already registred");
+			sendMsg(message, name + " already registred");
 		}
-
 	}
 
 	private void sendMsg(Message message, String text) {
@@ -189,7 +171,6 @@ public class App extends TelegramLongPollingBot {
 	private void setButtons(SendMessage sendMessage) {
 		ReplyKeyboardMarkup replyKeyboardMarkup = new ReplyKeyboardMarkup();
 
-		sendMessage.setReplyMarkup(replyKeyboardMarkup);
 		replyKeyboardMarkup.setSelective(false);
 		replyKeyboardMarkup.setResizeKeyboard(true);
 		replyKeyboardMarkup.setOneTimeKeyboard(true);
@@ -202,12 +183,13 @@ public class App extends TelegramLongPollingBot {
 		keyboardRow1.add(new KeyboardButton("/register"));
 		keyboardRow1.add(new KeyboardButton("/help"));
 		keyboardRow2.add(new KeyboardButton("/statAll"));
-		keyboardRow2.add(new KeyboardButton("/stat" + Year.now().getValue()));
+		keyboardRow2.add(new KeyboardButton("/stat" + playersDB.getYear()));
 
 		keyboardRows.add(keyboardRow1);
 		keyboardRows.add(keyboardRow2);
 
 		replyKeyboardMarkup.setKeyboard(keyboardRows);
+		sendMessage.setReplyMarkup(replyKeyboardMarkup);
 	}
 
 	public String getBotUsername() {

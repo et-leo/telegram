@@ -2,25 +2,56 @@ package model;
 
 import java.util.Map;
 
-import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-// @Document(collection = PlayerRepository.COLLECTION_NAME)
+import repo.PlayerRepository;
+
+@Document(collection = PlayerRepository.COLLECTION_NAME)
 public class Player {
-	@Id
-	String userId;
+	Long chatId;
+	String name;
 	Map<Integer, Integer> counter; // key - year; value - counter;
+	Boolean isWinner;
+	String dateOfWin;
 
-	public Player(String userId, Map<Integer, Integer> counter) {
-		this.userId = userId;
+	public Player(Long chatId, String name, Map<Integer, Integer> counter, Boolean isWinner, String dateOfWin) {
+		this.chatId = chatId;
+		this.name = name;
 		this.counter = counter;
+		this.isWinner = isWinner;
+		this.dateOfWin = dateOfWin;
 	}
 
-	public String getUserId() {
-		return userId;
+	public Boolean getIsWinner() {
+		return isWinner;
 	}
 
-	public void setUserId(String userId) {
-		this.userId = userId;
+	public void setIsWinner(Boolean isWinner) {
+		this.isWinner = isWinner;
+	}
+
+	public String getDateOfWin() {
+		return dateOfWin;
+	}
+
+	public void setDateOfWin(String dateOfWin) {
+		this.dateOfWin = dateOfWin;
+	}
+
+	public Long getChatId() {
+		return chatId;
+	}
+
+	public void setChatId(Long chatId) {
+		this.chatId = chatId;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
 	}
 
 	public Map<Integer, Integer> getCounter() {
@@ -33,7 +64,7 @@ public class Player {
 
 	@Override
 	public String toString() {
-		return userId;
+		return name;
 
 	}
 
