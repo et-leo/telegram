@@ -8,6 +8,7 @@ import repo.PlayerRepository;
 
 @Document(collection = PlayerRepository.COLLECTION_NAME)
 public class Player {
+	String _id;
 	Long chatId;
 	String name;
 	Map<Integer, Integer> counter; // key - year; value - counter;
@@ -20,6 +21,10 @@ public class Player {
 		this.counter = counter;
 		this.isWinner = isWinner;
 		this.dateOfWin = dateOfWin;
+	}
+
+	public String _id() {
+		return _id;
 	}
 
 	public Boolean getIsWinner() {

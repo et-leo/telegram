@@ -37,22 +37,22 @@ public class PlayersDB {
 	}
 
 	public Iterable<Player> getPlayersByChatId(Long chatId) {
-		return playersRepo.findByChatIdLike(chatId);
+		return playersRepo.findByChat(chatId);
 	}
 
-	public Player getWinnerByChatId(Long chatId) {
-		return playersRepo.findByChatIdIsWinnerLike(chatId, true);
+	public Player getWinnerByChatId(long chatId) {
+		return playersRepo.findByChatIdIsWinner(chatId, true);
 	}
 
 	public Iterable<Player> getPlayerByChatId(Long chatId, String name) {
-		return playersRepo.findByChatIdNameLike(chatId, name);
+		return playersRepo.findByChatIdName(chatId, name);
 	}
 
 	public boolean addPlayer(Player player) {
 		boolean res = false;
 		List<Player> newPlayer = (List<Player>) getPlayerByChatId(player.chatId, player.name);
-		if (newPlayer.isEmpty()) {
-			playersRepo.save(newPlayer);
+		if (newPlayer == null || newPlayer.isEmpty()) {
+			playersRepo.save(player);
 			res = true;
 		}
 		return res;
@@ -62,11 +62,10 @@ public class PlayersDB {
 		player.setIsWinner(isWinner);
 		if (isWinner) {
 			Map<Integer, Integer> counter = player.getCounter();
-			Integer currentWins = counter.get(getYear());
-			currentWins = currentWins == null ? 1 : currentWins++;
-			counter.put(getYear(), currentWins);
+			counter.put(getYear(), counter.get(getYear()) + 1);
 			player.setCounter(counter);
 			player.setDateOfWin(getDate());
+			playersRepo.delete(player._id);
 			playersRepo.save(player);
 		}
 	}

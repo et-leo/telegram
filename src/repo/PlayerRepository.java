@@ -1,5 +1,6 @@
 package repo;
 
+import org.springframework.data.mongodb.repository.Query;
 import org.springframework.data.repository.CrudRepository;
 
 import model.Player;
@@ -9,11 +10,16 @@ public interface PlayerRepository extends CrudRepository<Player, String> {
 	String BEANS_FILE_NAME = "beans.xml";
 	String MONGO_TEMPLATE_ID = "mongoTemplate";
 
-	Iterable<Player> findByChatIdLike(Long chatId);
+	@Query("{'chatId':{'$eq':?0}}")
+	Iterable<Player> findByChat(Long chatId);
 
-	Player findByChatIdIsWinnerLike(Long chatId, boolean b);
+	@Query("{'$and':[{'chatId':{'$eq':?0}},{'isWinner':{'$eq':?1}}]}")
+	Player findByChatIdIsWinner(long chatId, boolean b);
 
-	Iterable<Player> findByChatIdNameLike(Long chatId, String name);
+	@Query("{'$and':[{'chatId':{'$eq':?0}},{'name':{'$eq':?1}}]}")
+	Iterable<Player> findByChatIdName(Long chatId, String name);
+
+	// ============================= //
 
 	// Iterable<User> findByCostBetween(float f, float g);
 	//

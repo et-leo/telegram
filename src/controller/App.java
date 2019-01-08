@@ -56,6 +56,9 @@ public class App extends TelegramLongPollingBot {
 						if (text.startsWith("/stat")) {
 							showStat(message, text);
 						} else {
+							if (text.equals("/start")) {
+								sendMsg(message, "Let's start!");
+							}
 							// ignore -> nothing to do
 						}
 					}
@@ -83,15 +86,12 @@ public class App extends TelegramLongPollingBot {
 	}
 
 	private String getSortedPlayers(List<Player> players, Integer year) {
-		StringBuilder stat = new StringBuilder("Statistic for " + (year == null ? "all time" : (year + " year")) + enter);
+		StringBuilder stat = new StringBuilder(
+				"Statistic for " + (year == null ? "all time" : (year + " year")) + enter);
 		Map<String, Integer> statMap = new HashMap<>();
 		if (year == null) {
 			for (Player player : players) {
 				int counter = player.getCounter().values().stream().reduce(0, (acc, value) -> acc + value);
-				// int counter = 0;
-				// for (Integer value : player.getCounter().values()) {
-				// counter += value;
-				// }
 				statMap.put(player.getName(), counter);
 			}
 		} else {
@@ -101,7 +101,8 @@ public class App extends TelegramLongPollingBot {
 			}
 		}
 
-		Map<String, Integer> sortedPlayers = statMap.entrySet().stream().sorted((Map.Entry.<String, Integer>comparingByValue().reversed()))
+		Map<String, Integer> sortedPlayers = statMap.entrySet().stream()
+				.sorted((Map.Entry.<String, Integer>comparingByValue().reversed()))
 				.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (e1, e2) -> e1, LinkedHashMap::new));
 
 		for (Entry<String, Integer> player : sortedPlayers.entrySet()) {
@@ -116,7 +117,7 @@ public class App extends TelegramLongPollingBot {
 		if (currentWinner == null) {
 			List<Player> players = (List<Player>) playersDB.getPlayersByChatId(chatId);
 			if (players.isEmpty()) {
-				sendMsg(message, "No players");
+				sendMsg(message, "No players :(");
 			} else {
 				sendSpam(message);
 				newWinner = players.get((int) (Math.random() * (players.size())));
@@ -124,7 +125,7 @@ public class App extends TelegramLongPollingBot {
 				playersDB.updateWinner(newWinner, true);
 			}
 		} else {
-			if (currentWinner.getDateOfWin() == playersDB.getDate()) {
+			if (currentWinner.getDateOfWin().equals(playersDB.getDate())) {
 				sendMsg(message, "Current winner: " + currentWinner.getName());
 			} else {
 				playersDB.updateWinner(currentWinner, false);
@@ -141,7 +142,8 @@ public class App extends TelegramLongPollingBot {
 	}
 
 	private void printHelpMessage(Message message) {
-		String help = "/help - to see this message" + enter + "/register - registration" + enter + "/play - play round" + enter + "/statAll - stats for all time" + "/stat2019 - stats for selected year";
+		String help = "/help - to see this message" + enter + "/register - registration" + enter + "/play - play round"
+				+ enter + "/statAll - stats for all time" + enter + "/stat2019 - stats for selected year";
 		sendMsg(message, help);
 	}
 
