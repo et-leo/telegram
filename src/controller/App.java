@@ -19,7 +19,7 @@ import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.Keyboard
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import model.BotConfig; 
+import model.BotConfig;
 import model.Player;
 import model.PlayersDB;
 
@@ -87,10 +87,11 @@ public class App extends TelegramLongPollingBot {
 		Map<String, Integer> statMap = new HashMap<>();
 		if (year == null) {
 			for (Player player : players) {
-				int counter = 0;
-				for (Integer value : player.getCounter().values()) {
-					counter += value;
-				}
+				int counter = player.getCounter().values().stream().reduce(0, (acc, value) -> acc + value);
+				// int counter = 0;
+				// for (Integer value : player.getCounter().values()) {
+				// counter += value;
+				// }
 				statMap.put(player.getName(), counter);
 			}
 		} else {
